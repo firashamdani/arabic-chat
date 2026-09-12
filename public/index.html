@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0f19" />
+<title>شات العرب</title>
+<meta name="description" content="شات عربي متكامل — غرف، محادثات خاصة، ملفات، ولوحة تحكم للأدمن." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- شاشة التحميل الأولية -->
+<div id="boot" class="boot">
+  <div class="boot-box">
+    <div class="boot-logo">💬</div>
+    <div class="boot-title">شات العرب</div>
+    <div class="boot-bar"><span></span></div>
+    <div class="boot-msg" id="bootMsg">جارٍ التحميل…</div>
+  </div>
+</div>
+
+<!-- ========== صفحة الدخول ========== -->
+<section id="view-auth" class="view auth-view" hidden>
+  <div class="auth-bg"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="auth-logo">💬</div>
+      <h1 id="siteTitle">شات العرب</h1>
+      <p id="siteTagline">تواصل عربي بلا حدود</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="login">دخول</button>
+      <button class="tab" data-tab="register">حساب جديد</button>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <label class="field">
+        <span>اسم المستخدم أو البريد</span>
+        <input name="username" type="text" autocomplete="username" required placeholder="admin" />
+      </label>
+      <label class="field">
+        <span>كلمة المرور</span>
+        <div class="pw-wrap">
+          <input name="password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+          <button type="button" class="pw-toggle" aria-label="إظهار">👁</button>
+        </div>
+      </label>
+      <div class="err" id="loginErr"></div>
+      <button class="btn primary block" type="submit">تسجيل الدخول</button>
+      <div class="hint" id="adminHint"></div>
+    </form>
+
+    <form id="registerForm" class="auth-form" hidden>
+      <label class="field">
+        <span>الاسم الظاهر</span>
+        <input name="displayName" type="text" maxlength="40" required placeholder="مثال: أبو علي" />
+      </label>
+      <label class="field">
+        <span>اسم المستخدم (إنجليزي)</span>
+        <input name="username" type="text" autocomplete="username" required placeholder="abo_ali" />
+      </label>
+      <label class="field">
+        <span>البريد الإلكتروني</span>
+        <input name="email" type="email" autocomplete="email" required placeholder="you@mail.com" />
+      </label>
+      <label class="field">
+        <span>كلمة المرور</span>
+        <div class="pw-wrap">
+          <input name="password" type="password" autocomplete="new-password" required placeholder="6 أحرف على الأقل" />
+          <button type="button" class="pw-toggle" aria-label="إظهار">👁</button>
+        </div>
+      </label>
+      <div class="err" id="regErr"></div>
+      <button class="btn primary block" type="submit">إنشاء الحساب</button>
+      <p class="hint center">بالتسجيل فأنت توافق على الالتزام بالاحترام المتبادل.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ========== التطبيق الرئيسي ========== -->
+<section id="view-app" class="view app-view" hidden>
+
+  <!-- شريط حالة الاتصال -->
+  <div class="conn-banner" id="connBanner" hidden>
+    <span class="cb-dot"></span><span id="connText">جارٍ إعادة الاتصال…</span>
+  </div>
+
+  <!-- إعلان الإدارة -->
+  <div id="announcement" class="announcement" hidden>
+    <span class="ann-icon">📢</span>
+    <span class="ann-text" id="announcementText"></span>
+    <button class="ann-close" id="annClose">✕</button>
+  </div>
+
+  <div class="layout">
+
+    <!-- العمود الأول: الغرف -->
+    <aside class="col rooms-col" id="roomsCol">
+      <header class="side-head">
+        <button class="icon-btn only-mobile" id="openUserCol">👥</button>
+        <div class="brand">
+          <span class="brand-logo">💬</span>
+          <div>
+            <div class="brand-name" id="brandName">شات العرب</div>
+            <div class="brand-sub"><span class="dot live"></span><span id="onlineCount">0</span> متصل الآن</div>
+          </div>
+        </div>
+        <button class="icon-btn" id="btnNewRoom" title="غرفة جديدة">＋</button>
+      </header>
+
+      <div class="search-box">
+        <span>🔍</span>
+        <input id="roomSearch" type="text" placeholder="ابحث في الغرف والأعضاء…" />
+      </div>
+
+      <div class="side-scroll">
+        <div class="side-section">
+          <div class="side-title">
+            <span>الغرف العامة</span>
+            <button class="mini" id="btnNewRoom2">＋</button>
+          </div>
+          <div id="roomList" class="nav-list"></div>
+        </div>
+        <div class="side-section">
+          <div class="side-title"><span>المحادثات الخاصة</span></div>
+          <div id="dmList" class="nav-list"></div>
+        </div>
+      </div>
+
+      <footer class="me-bar">
+        <div class="avatar" id="meAvatar">?</div>
+        <div class="me-info">
+          <div class="me-name" id="meName">—</div>
+          <div class="me-role" id="meRole">عضو</div>
+        </div>
+        <button class="icon-btn" id="btnProfile" title="الملف الشخصي">⚙️</button>
+        <button class="icon-btn danger" id="btnLogout" title="خروج">⎋</button>
+      </footer>
+    </aside>
+
+    <!-- العمود الثاني: المحادثة -->
+    <main class="col chat-col">
+      <header class="chat-head">
+        <button class="icon-btn only-mobile" id="openRoomsCol">☰</button>
+        <div class="chat-title">
+          <span class="chat-icon" id="chatIcon">💬</span>
+          <div>
+            <div class="chat-name" id="chatName">اختر غرفة</div>
+            <div class="chat-sub" id="chatSub">—</div>
+          </div>
+        </div>
+        <div class="chat-actions">
+          <button class="icon-btn" id="btnToggleMembers" title="الأعضاء">👥</button>
+          <button class="icon-btn" id="btnRoomInfo" title="معلومات الغرفة">ℹ️</button>
+          <button class="icon-btn" id="btnTheme" title="الوضع الليلي">🌙</button>
+        </div>
+      </header>
+
+      <div class="typing-bar" id="typingBar" hidden><span id="typingText"></span></div>
+
+      <div class="messages" id="messages">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">💬</div>
+          <h3>أهلاً بك في شات العرب</h3>
+          <p>اختر غرفة من القائمة اليمنى للبدء، أو ابدأ محادثة خاصة مع أي عضو.</p>
+        </div>
+        <div id="msgList"></div>
+        <button class="load-more" id="loadMore" hidden>تحميل رسائل أقدم</button>
+      </div>
+
+      <button class="scroll-down" id="scrollDown" hidden title="أحدث الرسائل">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 16l-6-6h12z"/></svg>
+        <span class="sd-badge" id="sdBadge" hidden>0</span>
+      </button>
+
+      <div class="reply-preview" id="replyPreview" hidden>
+        <span class="rp-label">رد على <b id="replyTo"></b></span>
+        <span class="rp-text" id="replyText"></span>
+        <button class="rp-close" id="replyCancel">✕</button>
+      </div>
+
+      <div class="uploading" id="uploading" hidden>
+        <span>جارٍ رفع الملف…</span><span class="up-bar"><i></i></span>
+      </div>
+
+      <form class="composer" id="composer">
+        <button type="button" class="icon-btn" id="btnEmoji" title="إيموجي">😊</button>
+        <button type="button" class="icon-btn" id="btnAttach" title="إرفاق صورة أو ملف">📎</button>
+        <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.zip,.txt" hidden />
+        <textarea id="msgInput" rows="1" placeholder="اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
+        <button type="submit" class="send-btn" id="btnSend" title="إرسال">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </form>
+    </main>
+
+    <!-- العمود الثالث: الأعضاء -->
+    <aside class="col members-col" id="membersCol">
+      <header class="side-head">
+        <div class="brand"><span class="brand-logo">👥</span><div><div class="brand-name">الأعضاء</div><div class="brand-sub" id="membersCount">—</div></div></div>
+        <button class="icon-btn only-mobile" id="closeUserCol">✕</button>
+      </header>
+      <div class="side-scroll">
+        <div class="side-section">
+          <div class="side-title"><span>متصلون الآن</span></div>
+          <div id="onlineList" class="user-list"></div>
+        </div>
+        <div class="side-section">
+          <div class="side-title"><span>كل الأعضاء</span></div>
+          <div id="allUsersList" class="user-list"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ========== لوحة الأدمن ========== -->
+<section id="view-admin" class="view admin-view" hidden>
+  <header class="admin-head">
+    <div class="brand"><span class="brand-logo">🛡️</span><div><div class="brand-name">لوحة تحكم الأدمن</div><div class="brand-sub" id="adminSub">—</div></div></div>
+    <nav class="admin-tabs">
+      <button class="atab active" data-panel="stats">📊 المؤشرات</button>
+      <button class="atab" data-panel="users">👥 الأعضاء</button>
+      <button class="atab" data-panel="rooms">🚪 الغرف</button>
+      <button class="atab" data-panel="messages">💬 الرسائل</button>
+      <button class="atab" data-panel="settings">⚙️ الإعدادات</button>
+    </nav>
+    <button class="btn ghost" id="btnBackToChat">↩ رجوع للشات</button>
+  </header>
+
+  <div class="admin-body">
+    <!-- المؤشرات -->
+    <div class="panel active" data-panel="stats">
+      <div class="cards" id="statCards"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>النشاط خلال ٧ أيام</h3>
+          <div class="chart" id="chartActivity"></div>
+        </div>
+        <div class="card">
+          <h3>أنشط الغرف</h3>
+          <div class="bars" id="chartRooms"></div>
+        </div>
+        <div class="card">
+          <h3>أنشط الأعضاء</h3>
+          <div class="bars" id="chartUsers"></div>
+        </div>
+        <div class="card">
+          <h3>حالة النظام</h3>
+          <div class="kv" id="systemInfo"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- الأعضاء -->
+    <div class="panel" data-panel="users">
+      <div class="panel-head">
+        <h3>إدارة الأعضاء</h3>
+        <input class="input" id="adminUserSearch" placeholder="بحث بالاسم أو البريد…" />
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>العضو</th><th>اسم المستخدم</th><th>البريد</th><th>الصلاحية</th><th>الحالة</th><th>آخر ظهور</th><th>إجراءات</th></tr></thead>
+          <tbody id="adminUsersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- الغرف -->
+    <div class="panel" data-panel="rooms">
+      <div class="panel-head">
+        <h3>إدارة الغرف</h3>
+        <button class="btn primary" id="adminNewRoom">＋ غرفة جديدة</button>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>الغرفة</th><th>النوع</th><th>المالك</th><th>الرسائل</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+          <tbody id="adminRoomsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- الرسائل -->
+    <div class="panel" data-panel="messages">
+      <div class="panel-head">
+        <h3>سجل الرسائل</h3>
+        <input class="input" id="adminMsgSearch" placeholder="ابحث في نص الرسائل…" />
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>المرسل</th><th>الغرفة</th><th>النص</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+          <tbody id="adminMsgsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- الإعدادات -->
+    <div class="panel" data-panel="settings">
+      <h3>إعدادات الموقع</h3>
+      <form id="settingsForm" class="settings-form">
+        <label class="field"><span>اسم الموقع</span><input name="site_title" class="input" maxlength="60" /></label>
+        <label class="field"><span>الشعار الوصفي</span><input name="site_tagline" class="input" maxlength="100" /></label>
+        <label class="field"><span>نص الإعلان</span><textarea name="announcement" class="input" rows="2" maxlength="300"></textarea></label>
+        <label class="check"><input type="checkbox" name="announcement_active" /><span>إظهار الإعلان في أعلى الموقع</span></label>
+        <label class="field"><span>رسالة الترحيب</span><input name="welcome_message" class="input" maxlength="300" /></label>
+        <label class="check"><input type="checkbox" name="allow_signup" /><span>السماح بالتسجيل العام</span></label>
+        <label class="check"><input type="checkbox" name="allow_media" /><span>السماح برفع الصور والملفات</span></label>
+        <label class="check"><input type="checkbox" name="maintenance_mode" /><span>وضع الصيانة (يمنع الدخول)</span></label>
+        <div class="err" id="settingsErr"></div>
+        <button class="btn primary" type="submit">حفظ الإعدادات</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- طبقة تعتيم عند فتح القوائم على الجوال -->
+<div class="overlay" id="overlay" hidden></div>
+
+<!-- ===== نافذة منبثقة عامة ===== -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <header><h3 id="modalTitle">—</h3><button class="icon-btn" id="modalClose">✕</button></header>
+    <div class="modal-body" id="modalBody"></div>
+    <footer id="modalFooter"></footer>
+  </div>
+</div>
+
+<!-- قائمة سياق الرسالة -->
+<div class="ctx" id="ctx" hidden>
+  <button data-act="reply">↩️ رد</button>
+  <button data-act="copy">📋 نسخ</button>
+  <button data-act="edit">✏️ تعديل</button>
+  <button data-act="delete">🗑 حذف</button>
+</div>
+
+<!-- اختيار إيموجي -->
+<div class="emoji-pop" id="emojiPop" hidden></div>
+
+<!-- التنبيهات -->
+<div class="toasts" id="toasts"></div>
+
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

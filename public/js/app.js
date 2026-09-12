@@ -179,13 +179,20 @@ async function boot() {
       const { user } = await api('/auth/me');
       state.me = user; store.set('me', user);
       await enterApp();
+      finishBoot();
       return;
-    } catch { /* سقط الدخول */ }
+    } catch (e) {
+      console.error('[boot] تعذّر استئناف الجلسة', e);
+      // إن كان الخطأ في enterApp (لا في /auth/me) فالجلسة سليمة — نعرض الشات بدلاً من الخروج
+      if (state.token && state.me) {
+        try { showView('app'); renderMe(); finishBoot(); return; } catch {}
+      }
+    }
   }
   state.token = null; state.me = null;
   finishBoot();
   showView('auth');
-  $('#loginForm [name=username]').focus();
+  $('#loginForm [name=username]')?.focus();
 }
 
 function finishBoot() {
@@ -269,9 +276,12 @@ async function enterApp() {
   applyTheme(state.me?.settings?.theme || state.theme);
   showAnnouncement();
 
-  await Promise.all([loadRooms(), loadUsers()]);
-  setupRealtime();
-  startPing();
+  // تحميل الغرف والأعضاء — فشل أحدهما لا يمنع عرض التطبيق
+  try { await loadRooms(); } catch (e) { console.error('[enterApp] loadRooms', e); }
+  try { await loadUsers(); } catch (e) { console.error('[enterApp] loadUsers', e); }
+
+  try { setupRealtime(); } catch (e) { console.error('[enterApp] realtime', e); }
+  try { startPing(); } catch (e) { console.error('[enterApp] ping', e); }
 
   // افتح آخر غرفة أو الغرفة العامة
   const lastId = store.get('lastRoom');
@@ -993,15 +1003,22 @@ async function ping(roomId) {
 
 // ---------- إشعارات سطح المكتب ----------
 function initNotifications() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    setTimeout(() => Notification.requestPermission().catch(() => {}), 4000);
-  }
+  try {
+    if (typeof window.Notification === 'undefined' || !window.Notification) return;
+    if (window.Notification.permission === 'default' && window.Notification.requestPermission) {
+      setTimeout(() => {
+        try { Promise.resolve(window.Notification.requestPermission()).catch(() => {}); } catch {}
+      }, 4000);
+    }
+  } catch { /* الإشعارات غير حرجة — لا تُعطّل التطبيق */ }
 }
 function notifyDesktop(title, body) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  if (document.hasFocus()) return;
-  try { new Notification(title, { body: String(body || '').slice(0, 120), icon: '/favicon.svg' }); } catch {}
+  try {
+    if (typeof window.Notification === 'undefined' || !window.Notification) return;
+    if (window.Notification.permission !== 'granted') return;
+    if (document.hasFocus()) return;
+    new window.Notification(title, { body: String(body || '').slice(0, 120) });
+  } catch { /* غير حرج */ }
 }
 
 // ---------- نافذة عامة ----------
@@ -1191,21 +1208,26 @@ async function showProfileModal() {
 let adminLoaded = false;
 async function initAdmin() {
   if (state.me?.role !== 'admin') { showView('app'); return toast('لوحة الأدمن للمشرفين فقط', 'error'); }
-  if (!adminLoaded) {
-    adminLoaded = true;
-    $$('.atab').forEach((t) => t.addEventListener('click', () => {
-      $$('.atab').forEach((x) => x.classList.toggle('active', x === t));
-      $$('.admin-body .panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === t.dataset.panel));
-      refreshPanel(t.dataset.panel);
-    }));
-    $('#adminUserSearch').addEventListener('input', debounce(() => loadAdminUsers(), 350));
-    $('#adminMsgSearch').addEventListener('input', debounce(() => loadAdminMessages(), 350));
-    $('#adminNewRoom').addEventListener('click', newRoomModal);
-    $('#settingsForm').addEventListener('submit', saveSettings);
-    $('#btnBackToChat').addEventListener('click', () => showView('app'));
+  $('#adminSub').textContent = state.me.displayName || '';
+  try {
+    if (!adminLoaded) {
+      adminLoaded = true;
+      $$('.atab').forEach((t) => t.addEventListener('click', () => {
+        $$('.atab').forEach((x) => x.classList.toggle('active', x === t));
+        $$('.admin-body .panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === t.dataset.panel));
+        refreshPanel(t.dataset.panel).catch((e) => console.error('[admin]', e));
+      }));
+      $('#adminUserSearch').addEventListener('input', debounce(() => loadAdminUsers(), 350));
+      $('#adminMsgSearch').addEventListener('input', debounce(() => loadAdminMessages(), 350));
+      $('#adminNewRoom').addEventListener('click', newRoomModal);
+      $('#settingsForm').addEventListener('submit', saveSettings);
+      $('#btnBackToChat').addEventListener('click', () => showView('app'));
+    }
+    await refreshPanel('stats');
+  } catch (e) {
+    console.error('[initAdmin] فشل', e);
+    toast('تعذّر تحميل لوحة الأدمن: ' + e.message, 'error', 6000);
   }
-  $('#adminSub').textContent = state.me.displayName;
-  await refreshPanel('stats');
 }
 
 const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
@@ -1406,11 +1428,25 @@ async function saveSettings(e) {
 
 // ---------- التهيئة ----------
 document.addEventListener('DOMContentLoaded', () => {
-  initAuthForms();
-  initComposer();
-  initUpload();
-  initEmoji();
-  initGlobalUI();
-  initNotifications();
-  boot();
+  // كل تهيئة معزولة: فشل إحداها لا يمنع البقية ولا يوقف الإقلاع
+  const safe = (name, fn) => { try { fn(); } catch (e) { console.error('[init] فشل تهيئة ' + name, e); } };
+  safe('authForms', initAuthForms);
+  safe('composer', initComposer);
+  safe('upload', initUpload);
+  safe('emoji', initEmoji);
+  safe('globalUI', initGlobalUI);
+  safe('notifications', initNotifications);
+
+  // الإقلاع نفسه محمي: حتى لو فشل، تُزال شاشة التحميل ويظهر سبب الفشل
+  Promise.resolve()
+    .then(() => boot())
+    .catch((e) => {
+      console.error('[boot] فشل الإقلاع', e);
+      try {
+        finishBoot();
+        showView('auth');
+        const el = $('#loginErr');
+        if (el) el.textContent = 'تعذّر تحميل التطبيق: ' + (e && e.message ? e.message : e);
+      } catch {}
+    });
 });
